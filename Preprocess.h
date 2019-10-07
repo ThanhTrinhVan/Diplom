@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp> // библиотека opencv
 #include <vector>
 #include <numeric> // содержит функцию вычисления среднее значение списка accumulate
+#include <math.h>
 
 using namespace cv;
 typedef Point_<double> PointCenter; // для сохранения центр изображения в виде double
@@ -19,7 +20,7 @@ public:
 private:
 	double getThreshValue(Mat* img); // среднее значение яркости изображения img
 	Mat* rotateSrc(Mat* img, double &angle, PointCenter &center); // вращать img на угол angle вокруг center
-	Mat* cropping(Mat* img, PointCenter &center); // обрезать информационную часть с размером 300x100 из img
+	Mat* cropping(Mat * img, Mat* InfoArea, PointCenter &center); // обрезать информационную часть с размером 300x100 из img
 
 	Mat* src; // исходное изображение
 	Mat* dst; // результат нормализации

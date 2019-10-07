@@ -8,7 +8,7 @@ static bool abs_compare(double a, double b) // для сортировки vecto
 Preprocess::Preprocess()
 {
 	// создать черное изображение
-	src = new Mat(600, 800, CV_8UC3, Scalar(0, 0, 0));
+	src = new Mat(600, 800, CV_8UC1, Scalar(0, 0, 0));
 	dst = new Mat();
 }
 
@@ -17,7 +17,6 @@ Preprocess::Preprocess(Mat & src_img)
 	src = new Mat(src_img);
 	dst = new Mat();
 }
-
 
 Preprocess::~Preprocess()
 {
@@ -49,8 +48,10 @@ Mat * Preprocess::processing()
 	// Находить центр информационной части
 	findContours(*thresh, *contours, *hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 	PointCenter center((img_copy->cols - 1.0) / 2.0, (img_copy->rows - 1.0) / 2.0);
-	info_area = new Mat(img_copy->rows, img_copy->cols, CV_8UC3, Scalar(0, 0, 0));
-	int index_info_area = 0;
+	//info_area = new Mat(img_copy->rows, img_copy->cols, CV_8UC1, Scalar(0, 0, 0));
+	info_area = new Mat(Size(img_copy->cols, img_copy->rows), CV_8UC1, Scalar(0));
+	int index_info_area = -1;
+	RotatedRect minRect;
 	for (int i = 0; i < contours->size(); i++) {
 		drawContours(*img_copy, *contours, i, color_red, 2, 8, *hierarchy, 0, Point());
 		if (contourArea((*contours)[i]) > 0.3*img_copy->cols*img_copy->rows) {
@@ -58,6 +59,9 @@ Mat * Preprocess::processing()
 			center.x = M.m10 / M.m00;
 			center.y = M.m01 / M.m00;
 			index_info_area = i;
+			
+			minRect = minAreaRect((*contours)[i]);
+			center = minRect.center;
 		}
 	}
 	std::cout << "  -Rotate center: (" << center.x << ", " << center.y << ") \n";
@@ -78,7 +82,8 @@ Mat * Preprocess::processing()
 	double angle = 0, length = 0;
 	for (int i = 0; i < contours->size(); i++) {
 		length = arcLength((*contours)[i], true);
-		if (length > 0.7*min(img_copy->rows, img_copy->cols)) {
+		drawContours(*img_copy, *contours, i, color_blue, 2, 8, *hierarchy, 0, Point());
+		if (length > 0.5*min(img_copy->rows, img_copy->cols)) {
 			drawContours(*img_copy, *contours, i, color_blue, 2);
 			RotatedRect ellipse = fitEllipse((*contours)[i]);
 			if (ellipse.angle > 90)
@@ -97,9 +102,13 @@ Mat * Preprocess::processing()
 	std::cout << "  -Rotate angle: " << angle << std::endl;
 
 	dst = rotateSrc(src, angle, center);
-	dst = cropping(dst, center);
+	info_area = rotateSrc(info_area, angle, center);
+	//imshow("Rotated image", *dst);
+	dst = cropping(dst, info_area, center);
 
 	//imshow("Image copy", *img_copy);
+	//imshow("Information area", *info_area);
+
 	delete img_copy, gray, thresh, info_area, canny;
 	delete contours, hierarchy;
 	delete angles;
@@ -142,9 +151,109 @@ Mat * Preprocess::rotateSrc(Mat * img, double & angle, PointCenter & center)
 	return res;
 }
 
-Mat * Preprocess::cropping(Mat * img, PointCenter &center)
+Mat * Preprocess::cropping(Mat * img, Mat* infoArea, PointCenter &center)
 {
+	// src.at(i,j) is using (i,j) as (row,column) but Point(x,y) is using (x,y) as (column,row)
 	Mat* res = new Mat();
-	*res = (*img)(Range((int)center.y - 150, (int)center.y + 150), Range(((int)center.x - 50), ((int)center.x + 50)));
+	*res = img->clone();
+	circle(*img, center, 2, color_red, 2);
+	int height = infoArea->rows;
+	int width = infoArea->cols;
+	// pixel 0->255, 0 - black pixel
+	Point *topLeft, *topRight, *bottomLeft, *bottomRight;
+	bool find = false;
+	topLeft = new Point(center);
+	for (int i = 0; i < center.y; i++) {
+		if (find == true)
+			break;
+		for (int j = center.x - 1; j >= 0; j--) {
+			if ((int)infoArea->at<uchar>(i, j) == 0) {
+				topLeft->x = j;
+				topLeft->y = i;
+				find = true;
+				break;
+			}
+		}
+	}
+	circle(*img, *topLeft, 2, color_blue, 2);
+
+	find = false;
+	topRight = new Point(center);
+	for (int i = 0; i < center.y; i++) {
+		if (find == true)
+			break;
+		for (int j = center.x + 1; j < width; j++) {
+			if ((int)infoArea->at<uchar>(i, j) == 0) {
+				topRight->x = j;
+				topRight->y = i;
+				find = true;
+				break;
+			}
+		}
+	}
+	circle(*img, *topRight, 2, color_blue, 2);
+
+	find = false;
+	bottomLeft = new Point(center);
+	for (int i = height - 1; i > center.y; i--) {
+		if (find == true)
+			break;
+		for (int j = center.x - 1; j >= 0; j--) {
+			if ((int)infoArea->at<uchar>(i, j) == 0) {
+				bottomLeft->x = j;
+				bottomLeft->y = i;
+				find = true;
+				break;
+			}
+		}
+	}
+	circle(*img, *bottomLeft, 2, color_blue, 2);
+
+	find = false;
+	bottomRight = new Point(center);
+	for (int i = height - 1; i > center.y; i--) {
+		if (find == true)
+			break;
+		for (int j = center.x + 1; j < width; j++) {
+			if ((int)infoArea->at<uchar>(i, j) == 0) {
+				bottomRight->x = j;
+				bottomRight->y = i;
+				find = true;
+				break;
+			}
+		}
+	}
+	circle(*img, *bottomRight, 2, color_blue, 2);
+	//imshow("Image cropping", *img);
+	int rangeRow[2] = { max(topLeft->y, topRight->y), min(bottomLeft->y, bottomRight->y) };
+	int rangeCol[2] = { max(topLeft->x, bottomLeft->x), min(topRight->x, bottomRight->x) };
+	/*if (rangeRow[0] == rangeRow[1]) {
+		if (rangeRow[1] == bottomLeft->y)
+			rangeRow[1] = bottomRight->y;
+		else
+			rangeRow[1] = bottomLeft->y;
+	}
+	if (rangeCol[0] == rangeCol[1]) {
+		if (rangeCol[1] == topRight->x)
+			rangeCol[1] = bottomRight->x;
+		else
+			rangeCol[1] = topRight->x;
+	}*/
+	bool resizeRow = true;
+	bool resizeCol = true;
+	if ((rangeRow[1] - rangeRow[0]) >= 300) {
+		rangeRow[0] = (rangeRow[0] + rangeRow[1]) / 2 - 150;
+		rangeRow[1] = (rangeRow[0] + rangeRow[1]) / 2 + 150;
+		resizeRow = false;
+	}
+	if ((rangeCol[1] - rangeCol[0]) >= 100) {
+		rangeCol[0] = (rangeCol[0] + rangeCol[1]) / 2 - 50;
+		rangeCol[1] = (rangeCol[0] + rangeCol[1]) / 2 + 50;
+		resizeCol = false;
+	}
+	*res = (*res)(Range(rangeRow[0], rangeRow[1]), Range(rangeCol[0], rangeCol[1]));
+	if (resizeRow || resizeCol)
+		resize(*res, *res, Size(100, 300));
+	delete topLeft, topRight, bottomLeft, bottomRight;
 	return res;
 }

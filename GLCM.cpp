@@ -74,7 +74,7 @@ void GLCM::calculateFeatures()
 			features[0] += pow((i - j), 2)*matrix[i][j];
 		}
 	}
-	// features[0] /= pow(G - 1, 2);
+	//features[0] /= pow(G_level - 1, 2);
 	// correlation
 	features[1] = 0;
 	double* mu_u = new double[G_level + 1];
@@ -126,7 +126,7 @@ void GLCM::calculateFeatures()
 				features[1] += matrix[i][j] * (i - mu_u[G_level])*(j - mu_v[G_level]) / sqrt(si_u[G_level] * si_v[G_level]);
 		}
 	}
-	// features[1] = (features[1] + 1) / 2;
+	//features[1] = (features[1] + 1) / 2;
 	// energy
 	features[2] = 0;
 	for (i = 0; i < G_level; i++) {
@@ -205,12 +205,15 @@ Mat GLCM::getImgByChannel(Mat & img, ChannelRGB cn)
 		return bgr[0];
 		break;
 	case CHANNEL_RG:
+		cvtColor(bgr_2[0], bgr_2[0], CV_RGB2GRAY);
 		return bgr_2[0];
 		break;
 	case CHANNEL_RB:
+		cvtColor(bgr_2[1], bgr_2[1], CV_RGB2GRAY);
 		return bgr_2[1];
 		break;
 	case CHANNEL_GB:
+		cvtColor(bgr_2[2], bgr_2[2], CV_RGB2GRAY);
 		return bgr_2[2];
 		break;
 	default:
