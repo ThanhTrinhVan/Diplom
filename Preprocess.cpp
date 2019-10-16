@@ -85,10 +85,15 @@ Mat * Preprocess::processing()
 		drawContours(*img_copy, *contours, i, color_blue, 2, 8, *hierarchy, 0, Point());
 		if (length > 0.5*min(img_copy->rows, img_copy->cols)) {
 			drawContours(*img_copy, *contours, i, color_blue, 2);
-			RotatedRect ellipse = fitEllipse((*contours)[i]);
-			if (ellipse.angle > 90)
-				ellipse.angle -= 180;
-			angles->push_back(ellipse.angle);
+			try {
+				RotatedRect ellipse = fitEllipse((*contours)[i]);
+				if (ellipse.angle > 90)
+					ellipse.angle -= 180;
+				angles->push_back(ellipse.angle);
+			}
+			catch (...) {
+				angles->push_back(0);
+			}
 		}
 	}
 	if (angles->size() != 0) {
@@ -227,18 +232,6 @@ Mat * Preprocess::cropping(Mat * img, Mat* infoArea, PointCenter &center)
 	//imshow("Image cropping", *img);
 	int rangeRow[2] = { max(topLeft->y, topRight->y), min(bottomLeft->y, bottomRight->y) };
 	int rangeCol[2] = { max(topLeft->x, bottomLeft->x), min(topRight->x, bottomRight->x) };
-	/*if (rangeRow[0] == rangeRow[1]) {
-		if (rangeRow[1] == bottomLeft->y)
-			rangeRow[1] = bottomRight->y;
-		else
-			rangeRow[1] = bottomLeft->y;
-	}
-	if (rangeCol[0] == rangeCol[1]) {
-		if (rangeCol[1] == topRight->x)
-			rangeCol[1] = bottomRight->x;
-		else
-			rangeCol[1] = topRight->x;
-	}*/
 	bool resizeRow = true;
 	bool resizeCol = true;
 	if ((rangeRow[1] - rangeRow[0]) >= 300) {
@@ -252,8 +245,13 @@ Mat * Preprocess::cropping(Mat * img, Mat* infoArea, PointCenter &center)
 		resizeCol = false;
 	}
 	*res = (*res)(Range(rangeRow[0], rangeRow[1]), Range(rangeCol[0], rangeCol[1]));
-	if (resizeRow || resizeCol)
-		resize(*res, *res, Size(100, 300));
+	try {
+		if (resizeRow || resizeCol)
+			resize(*res, *res, Size(100, 300));
+	}
+	catch (...) {
+		return img;
+	}
 	delete topLeft, topRight, bottomLeft, bottomRight;
 	return res;
 }

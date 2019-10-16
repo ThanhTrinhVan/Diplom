@@ -1,6 +1,7 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 #include <math.h>
+#include <fstream>
 
 using namespace cv;
 
@@ -47,7 +48,7 @@ public:
 	double** getMatrix();
 	void printMatrix();
 	double* getFeatures_Haralick();
-	void printFeatures_Haralick();
+	void printFeatures_Haralick(std::ofstream &outFile);
 
 private:
 	double countValue(Mat &img, int id_u, int id_v);

@@ -263,11 +263,12 @@ double * GLCM::getFeatures_Haralick()
 	return features;
 }
 
-void GLCM::printFeatures_Haralick()
+void GLCM::printFeatures_Haralick(std::ofstream &outFile)
 {
 	std::cout << "  -Haralick's features: \n";
 	for (int i = 0; i < 6; i++) {
 		std::cout << NameFeatures[i] << features[i] << std::endl;
+		outFile << features[i] << ",";
 	}
 }
 
