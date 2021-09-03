@@ -1,0 +1,4 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (NormImage.vcxproj, System.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  main.cpp
+i:\grades\program\system\normimage\main.cpp(28): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+  NormImage.vcxproj -> I:\GradEs\Program\System\x64\Debug\SystemDiagnostic.exe

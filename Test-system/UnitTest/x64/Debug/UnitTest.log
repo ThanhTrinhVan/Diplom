@@ -1,0 +1,4 @@
+﻿  UnitTest.cpp
+i:\grades\program\system\normimage\classifier.cpp(222): warning C4244: 'return': conversion from 'double' to 'int', possible loss of data
+     Creating library I:\GradEs\Program\System\x64\Debug\UnitTest.lib and object I:\GradEs\Program\System\x64\Debug\UnitTest.exp
+  UnitTest.vcxproj -> I:\GradEs\Program\System\x64\Debug\UnitTest.dll
